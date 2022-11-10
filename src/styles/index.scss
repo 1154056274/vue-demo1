@@ -1,0 +1,5 @@
+@mixin displaySticky($top: 0) {
+    position: fixed;
+    top: $top;
+    z-index: 20;
+  }

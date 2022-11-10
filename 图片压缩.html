@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        /**
+   * @description: 图片压缩
+   */
+        function compressImg(file) {
+            let disposeFile = file;
+            if (Object.prototype.toString.call(file) === '[object Blob]') {
+                disposeFile = new File([file], file.name, { type: file.type });
+            }
+            const read = new FileReader(),
+                _that = this;
+            const fileSize = parseFloat(parseInt(disposeFile['size']) / 1024 / 1024).toFixed(2);
+            // 小于1m不压缩
+            // if (fileSize < 1) return file;
+            read.readAsDataURL(disposeFile);
+            return new Promise((resolve, reject) => {
+                try {
+                    read.onload = (e) => {
+                        const img = new Image();
+                        img.src = e.target.result;
+                        img.onload = function () {
+                            let w = Math.floor(this.width / 2),
+                                h = Math.floor(this.height / 2);
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            let base64;
+                            canvas.setAttribute('width', w);
+                            canvas.setAttribute('height', h);
+                            ctx.drawImage(this, 0, 0, w, h);
+                            console.log(w, h);
+                            if (fileSize < 1) {
+                                // 如果图片小于一兆 那么不执行压缩操作
+                                base64 = canvas.toDataURL(disposeFile['type'], 0.8);
+                            } else if (fileSize > 1 && fileSize < 2) {
+                                // 如果图片大于1M并且小于2M 那么压缩0.5
+                                base64 = canvas.toDataURL(disposeFile['type'], 0.8);
+                            } else {
+                                // 如果图片超过2m 那么压缩0.2
+                                base64 = canvas.toDataURL(disposeFile['type'], 0.8);
+                            }
+                            resolve(_that.dataURLtoFile(base64, disposeFile.name));
+                        };
+                    };
+                } catch (error) {
+                    reject(disposeFile);
+                }
+            });
+        }
+        /**
+         * @description: 将base64编码转回file文件
+         */
+        function dataURLtoFile(dataurl, fileName) {
+            var arr = dataurl.split(','),
+                mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]),
+                n = bstr.length,
+                u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new File([u8arr], fileName, {
+                type: mime,
+            });
+        }
+
+        //将url转换成file
+        function getFileFromUrl(url, fileName) {
+            return new Promise((resolve, reject) => {
+                let blob = null
+                let xhr = new XMLHttpRequest()
+                xhr.open('GET', url)
+                // 这里设置接收的响应体类型(试了不设置也正常)
+                xhr.setRequestHeader('Accept', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                xhr.responseType = 'blob'
+                // 加载时处理(异步)
+                xhr.onload = () => {
+                    // 获取返回结果
+                    blob = xhr.response
+                    console.log('blob:', blob)
+                    let file = new File([blob], fileName, { type: blob.type })
+                    // 返回结果
+                    resolve(file)
+                }
+                xhr.onerror = (e) => {
+                    reject(e)
+                }
+                // 发送
+                xhr.send()
+            })
+        }
+        getFileFromUrl('https://img2.baidu.com/it/u=2149607209,2234358780&fm=253&fmt=auto&app=138&f=JPEG?w=450&h=255', '名称').then(res => {
+            console.log(res)
+            // console.log(compressImg(res))
+            compressImg(res).then(result => {
+                console.log(result)
+                var fr = new FileReader
+                fr.readAsDataURL(result);
+                fr.onload = function (e) {
+                    console.log(e.target); // e.target返回FileReader对象,里面包含：事件，状态，属性，结果等
+                    console.log(e.target.result); // 读取的结果，dataURL格式的
+                };
+
+            })
+
+        })
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>
